@@ -14,6 +14,9 @@ images = []
 labels = []
 handedness_images = []
 
+count_left = 0
+count_right = 0
+
 for filename in os.listdir(r"Survey Items"):
     images.append(cv2.imread(r"Survey Items/" + filename)[1317:1573,101:2149])
     handedness_images.append(cv2.imread(r"Survey Items/" + filename)[910:1000,260:350])
@@ -32,12 +35,20 @@ for filename in os.listdir(r"Survey Items"):
 
     if average > 250:
         labels.append(1)
+        count_left += 1 
     else:
         labels.append(0)
+        count_right += 1
 
 #Don't move on if there is a difference in length
 assert len(labels) == len(images)
 
+# Weight left hand much higher than right hand samples
+left_weight = len(images) / (count_left * 2)
+right_weight = len(images) / (count_right * 2)
+
+# weights = {0: right_weight, 1: left_weight}
+weights = {0: .1, 1: .9}
 
 #Convert everything to tensors
 labels_tensor = tf.convert_to_tensor(labels, dtype=tf.int32)
@@ -85,8 +96,10 @@ model.compile(
 model.summary()
 
 # Train the model
-history = model.fit(X_train, y_train, epochs=5, batch_size=2, validation_data=(X_val, y_val))
+history = model.fit(X_train, y_train, epochs=20, batch_size=2, validation_data=(X_val, y_val), class_weight=weights)
 
+# Save the model for future use
+model.save("model.keras")
 
 """--------------------------------------------------------------Plotting Results---------------------------------------------------------------------------"""
 
