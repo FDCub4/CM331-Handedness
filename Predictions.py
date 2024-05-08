@@ -7,30 +7,29 @@ import keras
 from keras import layers
 images = []
 
-class ResidualBlock(layers.Layer):
-    def __init__(self, filters, kernel_size):
-        super().__init__()
-        self.conv1 = layers.Conv2D(filters, kernel_size, padding='same', activation='relu')
-        self.bn1 = layers.BatchNormalization()
-        self.conv2 = layers.Conv2D(filters, kernel_size, padding='same', activation='relu')
-        self.bn2 = layers.BatchNormalization()
+class ComplexResidualBlock(layers.Layer):
+    def __init__(self, filters, kernel_sizes, **kwargs):
+        super().__init__(**kwargs)
+        self.convs = [
+            layers.Conv2D(filters, kernel_size, padding='same', activation='relu')
+            for kernel_size in kernel_sizes
+        ]
+        self.bns = [layers.BatchNormalization() for _ in kernel_sizes]
         self.shortcut = layers.Conv2D(filters, (1, 1), padding='same')  # Shortcut for residual connection
 
     def call(self, inputs):
-        x = self.conv1(inputs)
-        x = self.bn1(x)
-        x = self.conv2(x)
-        x = self.bn2(x)
-        
-        # Residual connection
-        shortcut = self.shortcut(inputs)
+        x = inputs
+        for conv, bn in zip(self.convs, self.bns):
+            x = conv(x)
+            x = bn(x)
+        shortcut = self.shortcut(inputs)  # Ensure the shortcut has the same number of filters
         return layers.add([x, shortcut])
-    
+
     def get_config(self):
-        config = super().get_config()  # Get base layer config
+        config = super().get_config()
         config.update({
-            'filters': self.conv1.filters,
-            'kernel_size': self.conv1.kernel_size,
+            'filters': self.convs[0].filters,
+            'kernel_sizes': [conv.kernel_size for conv in self.convs]
         })
         return config
 
@@ -43,7 +42,7 @@ for filename in os.listdir(r"updated_images"):
 images_tensor = tf.stack([tf.convert_to_tensor(image, dtype=tf.float32) for image in images])
 
 custom_objects = {
-    'ResidualBlock': ResidualBlock  # Define the custom layer in the dictionary
+    'ResidualBlock': ComplexResidualBlock  # Define the custom layer in the dictionary
 }
 
 
