@@ -151,12 +151,15 @@ val_acc = history.history['val_accuracy']
 epochs = range(1, len(train_loss) + 1)
 
 # Plot training and validation loss on the same graph
-plt.figure(figsize=(8, 6))
-plt.plot(epochs, train_loss, 'b-', label='Training Loss')
-plt.plot(epochs, val_loss, 'r-', label='Validation Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.title('Training and Validation Loss Over Epochs')
-plt.legend()
+
+fig, ax = plt.subplots(2, 1, figsize=(6, 8))
+
+# plt.figure(figsize=(8, 6))
+ax[0].plot(epochs, train_loss, 'b-', label='Training Loss')
+ax[0].plot(epochs, val_loss, 'r-', label='Validation Loss')
+ax[1].bar(("Right", "Left"), (count_right, count_left), color='b')
+
+
+plt.tight_layout()
 plt.show()
 
