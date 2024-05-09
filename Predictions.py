@@ -7,7 +7,7 @@ import keras
 from keras import layers
 images = []
 
-class ComplexResidualBlock(layers.Layer):
+class ResidualBlock(layers.Layer):
     def __init__(self, filters, kernel_sizes, **kwargs):
         super().__init__(**kwargs)
         self.convs = [
@@ -33,7 +33,6 @@ class ComplexResidualBlock(layers.Layer):
         })
         return config
 
-
 for filename in os.listdir(r"updated_images"):
     images.append(cv2.imread(r"updated_images/" + filename)[897:1153 ,101:2149])
     images[-1] = cv2.cvtColor(images[-1], cv2.COLOR_BGR2GRAY)
@@ -42,7 +41,7 @@ for filename in os.listdir(r"updated_images"):
 images_tensor = tf.stack([tf.convert_to_tensor(image, dtype=tf.float32) for image in images])
 
 custom_objects = {
-    'ResidualBlock': ComplexResidualBlock  # Define the custom layer in the dictionary
+    'ResidualBlock': ResidualBlock  # Define the custom layer in the dictionary
 }
 
 
@@ -50,7 +49,12 @@ model = keras.models.load_model("model.keras", custom_objects=custom_objects)
 
 predictions = model.predict(images_tensor)
 
+prediction_string = []
+for prediction in predictions:
+    if prediction > .5:
+        prediction_string.append("Right")
+    else:
+        prediction_string.append("Left")
+        
+print(prediction_string)
 
-predictions_string = [prediction > .5 if "Right" else "Left" for prediction in predictions]
-
-print(predictions_string)

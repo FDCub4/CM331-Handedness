@@ -1,5 +1,3 @@
-#This is the beginning of the end for the project
-
 import os
 import cv2
 import numpy as np
@@ -11,7 +9,7 @@ handedness_images = []
 
 count_left = 0
 count_right = 0
-
+"""--------------------------------------------Preprocessing------------------------------------------------"""
 for filename in os.listdir(r"Survey Items"):
     images.append(cv2.imread(r"Survey Items/" + filename)[1317:1573,101:2149]) #Get the handwriting
     handedness_images.append(cv2.imread(r"Survey Items/" + filename)[910:1000,260:350]) #get the handedness
@@ -67,12 +65,9 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.
 
 
 
-#simple model to test everything
 import keras
 from keras import layers
-
-
-class ComplexResidualBlock(layers.Layer):
+class ResidualBlock(layers.Layer):
     def __init__(self, filters, kernel_sizes, **kwargs):
         super().__init__(**kwargs)
         self.convs = [
@@ -99,18 +94,16 @@ class ComplexResidualBlock(layers.Layer):
         return config
 
 
-# Define a more complex model with multiple residual blocks and regularization
 model = keras.Sequential([
-    # Initial convolutional layers
-    layers.Conv2D(64, (3, 3), activation='relu', input_shape=(64, 512, 1)),  # First layer with 64 filters
-    layers.MaxPooling2D((2, 2)),  # Downsampling
+    layers.Conv2D(64, (3, 3), activation='relu', input_shape=(64, 512, 1)),
+    layers.MaxPooling2D((2, 2)),
 
     # Residual Blocks
-    ComplexResidualBlock(64, [(3, 3), (5, 5)]), 
+    ResidualBlock(64, [(3, 3), (5, 5)]), 
     layers.MaxPooling2D((2, 2)),  
-    ComplexResidualBlock(128, [(3, 3), (3, 3)]),
+    ResidualBlock(128, [(3, 3), (3, 3)]),
     layers.MaxPooling2D((2, 2)), 
-    ComplexResidualBlock(256, [(3, 3), (5, 5)]),  
+    ResidualBlock(256, [(3, 3), (5, 5)]),  
 
     layers.Flatten(),  
     layers.Dropout(0.5), 
@@ -121,7 +114,6 @@ model = keras.Sequential([
     layers.Dense(1, activation='sigmoid')
 ])
 
-
 # Compile the model
 model.compile(
     optimizer='adam',
@@ -131,7 +123,7 @@ model.compile(
 
 model.summary()
 
-# Train the model
+# Training
 history = model.fit(X_train, y_train, epochs=10, batch_size=2, validation_data=(X_val, y_val))
 
 # Save the model for future use
@@ -148,24 +140,20 @@ print("Test Accuracy:", test_accuracy)
 
 
 
-#make the plot of the loss over epochs
 
-# Get loss values over epochs
-train_loss = history.history['loss']  # Training loss
-val_loss = history.history['val_loss']  # Validation loss
-
-# Get accuracy values over epochs (optional)
-train_acc = history.history['accuracy']  # Training accuracy
-val_acc = history.history['val_accuracy']  # Validation accuracy
+# Get loss and accuracy over epochs
+train_loss = history.history['loss']
+val_loss = history.history['val_loss']
+train_acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
 
 
-# Create an x-axis for epochs
 epochs = range(1, len(train_loss) + 1)
 
 # Plot training and validation loss on the same graph
 plt.figure(figsize=(8, 6))
-plt.plot(epochs, train_loss, 'b-', label='Training Loss')  # 'b-' for blue line
-plt.plot(epochs, val_loss, 'r-', label='Validation Loss')  # 'r-' for red line
+plt.plot(epochs, train_loss, 'b-', label='Training Loss')
+plt.plot(epochs, val_loss, 'r-', label='Validation Loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.title('Training and Validation Loss Over Epochs')
